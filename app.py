@@ -9,12 +9,14 @@ CORS(app, supports_credentials=True)  # 设置跨域
 
 @app.route('/upload_pic', methods=['post'])
 def upload_pic():
-    file = request.files['file']
-    filename = file.filename
-    dir_name = '/Users/bytedance/image/' + str(uuid.uuid1())
+    uuid_ = str(uuid.uuid1())
+    dir_name = '/Users/bytedance/image/' + uuid_
     os.system("mkdir -vp {}".format(dir_name))
-    file.save(dir_name + "/" + filename)
-    return jsonify()
+    files = request.files.getlist("file")
+    for file in files:
+        # print(file)
+        file.save(dir_name + "/" + str(uuid.uuid1()) + file.filename)
+    return jsonify({'uuid': uuid_})
 
 
 if __name__ == '__main__':
