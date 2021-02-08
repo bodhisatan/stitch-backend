@@ -8,6 +8,7 @@ import math
 
 # 计算图像直方图相似度、SSIM结构化相似度、PSNR指标
 
+
 def calculate(image1, image2):
     # 灰度直方图算法
     # 计算单通道的直方图的相似值
@@ -36,7 +37,7 @@ def classify_hist_with_split(image1, image2, size=(256, 256)):
     for im1, im2 in zip(sub_image1, sub_image2):
         sub_data += calculate(im1, im2)
     sub_data = sub_data / 3
-    return sub_data
+    return round(sub_data[0], 3)
 
 
 def ssim(img1, img2):
@@ -56,7 +57,7 @@ def ssim(img1, img2):
     sigma12 = cv2.filter2D(img1 * img2, -1, window)[5:-5, 5:-5] - mu1_mu2
     ssim_map = ((2 * mu1_mu2 + C1) * (2 * sigma12 + C2)) / ((mu1_sq + mu2_sq + C1) *
                                                             (sigma1_sq + sigma2_sq + C2))
-    return ssim_map.mean()
+    return round(float(ssim_map.mean()), 3)
 
 
 def calculate_ssim(img1, img2, size=(256, 256)):
