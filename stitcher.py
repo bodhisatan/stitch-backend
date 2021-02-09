@@ -15,10 +15,6 @@ class Stitcher:
         # 获取输入图片，输入两张彩色图片
         (imageB, imageA) = images
 
-        # # OpenCV默认读取顺序是BGR，如果是cv2读取图片，要反过来
-        # imageB = imageB[:,:,::-1]
-        # imageA = imageA[:,:,::-1]
-
         # 检测A、B图片的SIFT关键特征点，并计算特征描述子
         kpsA, featuresA = self.detectAndDescribe(imageA)
         kpsB, featuresB = self.detectAndDescribe(imageB)
@@ -50,14 +46,6 @@ class Stitcher:
         return result
 
     def detectAndDescribe(self, image):
-        # # 将彩色图片转换成HSI # 老师在群里说可以用HSI，处理I。这里不是很懂，SIFT应该就是计算灰度图的，可能老师说的是SIFT的彩色描述子，大家可以去试一下
-        # hsi = tools.RGB2HSI(image)
-        # h, s, i = [hsi[:, :, i] for i in range(3)]
-        # gray = i
-
-        # # 将彩色图片转换成灰度图
-        # gray = tools.GenerateGrayImg(image)
-
         # 建立SIFT生成器
         descriptor = cv2.SIFT_create()
         # 检测SIFT特征点，并计算描述子
@@ -67,9 +55,6 @@ class Stitcher:
         # orb = cv2.ORB_create()
         # # 检测关键点和特征描述
         # kps, features = orb.detectAndCompute(image, None)
-
-        # # 自己写的sift
-        # kps, features = sift.SIFT(gray)
 
         # 将结果转换成NumPy数组
         kps = np.float32([kp.pt for kp in kps])
