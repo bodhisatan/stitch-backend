@@ -1,6 +1,7 @@
 # -*- coding: utf8 -*-
 # author: yaoxianjie
 # date: 2021/2/7
+import datetime
 
 import numpy as np
 import cv2
@@ -12,12 +13,17 @@ class Stitcher:
     """
 
     def stitch(self, images, ratio=0.75, reprojThresh=4.0, showMatches=False, feature_algorithm='SIFT'):
+        time_step1 = datetime.datetime.now()
         # 获取输入图片，输入两张彩色图片
         (imageB, imageA) = images
+
+        time_step2 = datetime.datetime.now()
 
         # 检测A、B图片的SIFT关键特征点，并计算特征描述子
         kpsA, featuresA = self.detectAndDescribe(imageA, algorithm=feature_algorithm)
         kpsB, featuresB = self.detectAndDescribe(imageB, algorithm=feature_algorithm)
+
+        time_step3 = datetime.datetime.now()
 
         # 匹配两张图片的所有特征点，返回匹配结果
         M = self.matchKeypoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh)
@@ -35,15 +41,20 @@ class Stitcher:
         # 将图片B传入result图片最左端
         result[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
 
+        time_step4 = datetime.datetime.now()
+
+        total_time_cost = (time_step4 - time_step1).microseconds / 1000
+        algorithm_time_cost = (time_step3 - time_step2).microseconds / 1000
+
         # 检测是否需要显示图片匹配
         if showMatches:
             # 生成匹配图片
             vis = self.drawMatches(imageA, imageB, kpsA, kpsB, matches, status)
             # 返回结果
-            return result, vis
+            return result, vis, algorithm_time_cost, total_time_cost
 
         # 返回匹配结果
-        return result
+        return result, algorithm_time_cost, total_time_cost
 
     def detectAndDescribe(self, image, algorithm='SIFT'):
         if algorithm == 'SIFT':

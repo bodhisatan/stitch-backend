@@ -59,7 +59,7 @@ def start_analysis():
 
     # 拼接图像
     stitcher = Stitcher()
-    (result, vis) = stitcher.stitch([image1, image2], showMatches=True, feature_algorithm=algorithm)
+    (result, vis, algorithm_time_cost, total_time_cost) = stitcher.stitch([image1, image2], showMatches=True, feature_algorithm=algorithm)
     cv2.imwrite(dir_name + "result.png", result)
     cv2.imwrite(dir_name + "vis.png", vis)
 
@@ -78,7 +78,9 @@ def start_analysis():
                     'vis_url': config.url + data['pic_uuid'] + '/vis.png',
                     'ssim': str(ssim),
                     'hist': str(hist),
-                    'psnr': str(psnr)})
+                    'psnr': str(psnr),
+                    'algorithm_time_cost': algorithm_time_cost,
+                    'total_time_cost': total_time_cost})
 
 
 if __name__ == '__main__':
