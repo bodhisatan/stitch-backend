@@ -11,13 +11,13 @@ class Stitcher:
     图片拼接
     """
 
-    def stitch(self, images, ratio=0.75, reprojThresh=4.0, showMatches=False):
+    def stitch(self, images, ratio=0.75, reprojThresh=4.0, showMatches=False, feature_algorithm='SIFT'):
         # 获取输入图片，输入两张彩色图片
         (imageB, imageA) = images
 
         # 检测A、B图片的SIFT关键特征点，并计算特征描述子
-        kpsA, featuresA = self.detectAndDescribe(imageA)
-        kpsB, featuresB = self.detectAndDescribe(imageB)
+        kpsA, featuresA = self.detectAndDescribe(imageA, algorithm=feature_algorithm)
+        kpsB, featuresB = self.detectAndDescribe(imageB, algorithm=feature_algorithm)
 
         # 匹配两张图片的所有特征点，返回匹配结果
         M = self.matchKeypoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh)
@@ -45,16 +45,17 @@ class Stitcher:
         # 返回匹配结果
         return result
 
-    def detectAndDescribe(self, image):
-        # 建立SIFT生成器
-        descriptor = cv2.SIFT_create()
-        # 检测SIFT特征点，并计算描述子
-        (kps, features) = descriptor.detectAndCompute(image, None)
-
-        # # 建立ORB生成器
-        # orb = cv2.ORB_create()
-        # # 检测关键点和特征描述
-        # kps, features = orb.detectAndCompute(image, None)
+    def detectAndDescribe(self, image, algorithm='SIFT'):
+        if algorithm == 'SIFT':
+            # 建立SIFT生成器
+            sift = cv2.SIFT_create()
+            # 检测SIFT特征点，并计算描述子
+            kps, features = sift.detectAndCompute(image, None)
+        elif algorithm == 'ORB':
+            # 建立ORB生成器
+            orb = cv2.ORB_create()
+            # 检测关键点和特征描述
+            kps, features = orb.detectAndCompute(image, None)
 
         # 将结果转换成NumPy数组
         kps = np.float32([kp.pt for kp in kps])

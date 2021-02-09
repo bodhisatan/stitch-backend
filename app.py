@@ -30,6 +30,7 @@ def upload_pic():
 @app.route('/start', methods=['post'])
 def start_analysis():
     data = request.get_json()
+    algorithm = data['algorithm']
     dir_name = config.nginx_file_url + data['pic_uuid'] + '/'
     pic1_name = data['pic1_name']
     pic2_name = data['pic2_name']
@@ -58,7 +59,7 @@ def start_analysis():
 
     # 拼接图像
     stitcher = Stitcher()
-    (result, vis) = stitcher.stitch([image1, image2], showMatches=True)
+    (result, vis) = stitcher.stitch([image1, image2], showMatches=True, feature_algorithm=algorithm)
     cv2.imwrite(dir_name + "result.png", result)
     cv2.imwrite(dir_name + "vis.png", vis)
 
