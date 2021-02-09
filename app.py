@@ -7,6 +7,7 @@ import cv2
 from stitcher import Stitcher
 import pic_analysis
 import config
+from PIL import Image
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)  # 设置跨域
@@ -35,16 +36,31 @@ def start_analysis():
     pic1_path = dir_name + pic1_name
     pic2_path = dir_name + pic2_name
 
-    image1 = imageio.imread(pic1_path)
-    image2 = imageio.imread(pic2_path)
-    image1 = cv2.resize(image1, (256, 256))
-    image2 = cv2.resize(image2, (256, 256))
+    # 读入图片 -> 转换为3通道 -> 转换格式 -> 放缩尺寸
+    image1 = Image.open(pic1_path)
+    image2 = Image.open(pic2_path)
+    channel = len(image1.split())
+    if channel != 3:
+        if channel == 4:
+            r, g, b, a = image1.split()
+            image1 = Image.merge("RGB", (r, g, b))
+            r, g, b, a = image2.split()
+            image2 = Image.merge("RGB", (r, g, b))
+        else:
+            image1 = image1.convert("RGB")
+            image2 = image2.convert("RGB")
+    image1 = pic_analysis.pil_image_to_cv(image1)
+    image2 = pic_analysis.pil_image_to_cv(image2)
+    (hA, wA) = image1.shape[:2]
+    (hB, wB) = image2.shape[:2]
+    image1 = cv2.resize(image1, (max(wA, wB), max(hA, hB)))
+    image2 = cv2.resize(image2, (max(wA, wB), max(hA, hB)))
 
     # 拼接图像
     stitcher = Stitcher()
     (result, vis) = stitcher.stitch([image1, image2], showMatches=True)
-    cv2.imwrite(dir_name + "result.png", cv2.cvtColor(result, cv2.COLOR_RGB2BGR))
-    cv2.imwrite(dir_name + "vis.png", cv2.cvtColor(vis, cv2.COLOR_RGB2BGR))
+    cv2.imwrite(dir_name + "result.png", result)
+    cv2.imwrite(dir_name + "vis.png", vis)
 
     # 计算输入图片相似度
     hist = pic_analysis.classify_hist_with_split(image1, image2)

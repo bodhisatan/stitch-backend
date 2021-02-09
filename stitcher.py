@@ -44,7 +44,7 @@ class Stitcher:
             # 生成匹配图片
             vis = self.drawMatches(imageA, imageB, kpsA, kpsB, matches, status)
             # 返回结果
-            return (result, vis)
+            return result, vis
 
         # 返回匹配结果
         return result

@@ -5,8 +5,10 @@
 import cv2
 import numpy as np
 import math
+from PIL import Image
 
-# 计算图像直方图相似度、SSIM结构化相似度、PSNR指标
+
+# tool类
 
 
 def calculate(image1, image2):
@@ -102,3 +104,17 @@ def psnr(target, ref, size=(256, 256)):
     if rmse == 0:
         rmse = eps
     return 20 * math.log10(255.0 / rmse)
+
+
+# PIL Image转换成OpenCV格式
+def pil_image_to_cv(src_img):
+    img = cv2.cvtColor(np.asarray(src_img), cv2.COLOR_RGB2BGR)
+    return img
+
+
+# OpenCV图片转换为PIL image
+def cv_image_to_pil(src_img):
+    img = Image.fromarray(cv2.cvtColor(src_img, cv2.COLOR_BGR2RGB))
+    return img
+
+
