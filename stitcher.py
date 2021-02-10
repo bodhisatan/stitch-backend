@@ -19,7 +19,7 @@ class Stitcher:
 
         time_step2 = datetime.datetime.now()
 
-        # 检测A、B图片的SIFT关键特征点，并计算特征描述子
+        # 检测A、B图片的关键特征点，并计算特征描述子
         kpsA, featuresA = self.detectAndDescribe(imageA, algorithm=feature_algorithm)
         kpsB, featuresB = self.detectAndDescribe(imageB, algorithm=feature_algorithm)
 

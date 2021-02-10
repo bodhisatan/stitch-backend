@@ -2,7 +2,6 @@
 # author: yaoxianjie
 # date: 2021/2/10
 import cv2
-import numpy as np
 import scipy
 from PIL import Image
 from scipy.spatial.distance import cdist
@@ -237,6 +236,11 @@ if __name__ == '__main__':
 
     hog_matches = description_matches(desc1, desc2, threshold=0.7)
     H, robust_matches = ransac(keypoint1, keypoint2, hog_matches, threshold=1)
+
+    fig, ax = plt.subplots(1, 1, figsize=(15, 12))
+    plot_matches(ax, image1, image2, keypoint1, keypoint2, robust_matches)
+    plt.axis('off')
+    plt.show()
 
     output_shape, offset = get_output_space(image1, [image2], [H])
 
