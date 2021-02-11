@@ -118,3 +118,15 @@ def cv_image_to_pil(src_img):
     return img
 
 
+# 读入图片转为3通道 输出cv2的图片格式
+def read_three_channel_pic(src):
+    image = Image.open(src)
+    channel = len(image.split())
+    if channel != 3:
+        if channel == 4:
+            r, g, b, a = image.split()
+            image = Image.merge("RGB", (r, g, b))
+        else:
+            image = image.convert("RGB")
+    ret = pil_image_to_cv(image)
+    return ret

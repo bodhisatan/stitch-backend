@@ -126,28 +126,22 @@ def hog_description(patch, cell_size=(8, 8)):
             Hog_list.append(block_description)
     return np.array(Hog_list).flatten()
 
-
-def plot_matches(ax, image1, image2, keypoint1, keypoint2, matches):
-    H1, W1 = image1.shape
-    H2, W2 = image2.shape
-    if H1 > H2:
-        new_image2 = np.zeros((H1, W2))
-        new_image2[:H2, :] = image2
-        image2 = new_image2
-    if H1 < H2:
-        new_image1 = np.zeros((H2, W1))
-        new_image2[:H1, :] = image1
-        image1 = new_image1
-    image = np.concatenate((image1, image2), axis=1)
-    ax.scatter(keypoint1[:, 1], keypoint1[:, 0], facecolors='none', edgecolors='k')
-    ax.scatter(keypoint2[:, 1] + image1.shape[1], keypoint2[:, 0], facecolors='none', edgecolors='k')
-    ax.imshow(image, interpolation='nearest', cmap='gray')
+def drawMatches(imageA, imageB, kpsA, kpsB, matches):
+    # 初始化可视化图片，将A、B图左右连接到一起
+    (hA, wA) = imageA.shape[:2]
+    (hB, wB) = imageB.shape[:2]
+    vis = np.zeros((max(hA, hB), wA + wB, 3), dtype="uint8")
+    vis[0:hA, 0:wA] = imageA
+    vis[0:hB, wA:] = imageB
     for one_match in matches:
         index1 = one_match[0]
         index2 = one_match[1]
-        color = np.random.rand(3)
-        ax.plot((keypoint1[index1, 1], keypoint2[index2, 1] + image1.shape[1]),
-                (keypoint1[index1, 0], keypoint2[index2, 0]), '-', color=color)
+        ptA = kpsA[index1, 1], kpsB[index2, 1]
+        ptB = kpsB[index2, 0] + image1.shape[1], kpsA[index1, 0]
+        cv2.line(vis, ptA, ptB, (0, 255, 0), 1)
+
+    # 返回可视化结果
+    return vis
 
 
 def fit_affine_matrix(p1, p2):
@@ -207,56 +201,3 @@ def warp_image(image, H, output_shape, offset):
     image_warped = scipy.ndimage.interpolation.affine_transform(image, matrix, o, output_shape, cval=-1)
     return image_warped
 
-
-if __name__ == '__main__':
-    image1 = Image.open('/Users/bytedance/Desktop/pic/5-1.png')
-    image2 = Image.open('/Users/bytedance/Desktop/pic/5-2.png')
-    image1 = image1.convert("RGB")
-    image2 = image2.convert("RGB")
-    image1 = cv2.cvtColor(np.asarray(image1), cv2.COLOR_RGB2BGR)
-    image2 = cv2.cvtColor(np.asarray(image2), cv2.COLOR_RGB2BGR)
-    image1 = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
-    image2 = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
-
-    # 归一化
-    image1 = np.float32(image1)
-    image2 = np.float32(image2)
-    dst1 = np.zeros(image1.shape, dtype=np.float32)
-    cv2.normalize(image1, dst=dst1, alpha=1.0, beta=0, norm_type=cv2.NORM_INF)
-    dst2 = np.zeros(image2.shape, dtype=np.float32)
-    cv2.normalize(image2, dst=dst2, alpha=1.0, beta=0, norm_type=cv2.NORM_INF)
-    image1 = dst1
-    image2 = dst2
-
-    keypoint1 = corner_peaks(harris_corners(image1), threshold_rel=0.05, exclude_border=8)
-    keypoint2 = corner_peaks(harris_corners(image2), threshold_rel=0.05, exclude_border=8)
-
-    desc1 = keypoint_description(image1, keypoint1, hog_description, patch_size=16)
-    desc2 = keypoint_description(image2, keypoint2, hog_description, patch_size=16)
-
-    hog_matches = description_matches(desc1, desc2, threshold=0.7)
-    H, robust_matches = ransac(keypoint1, keypoint2, hog_matches, threshold=1)
-
-    fig, ax = plt.subplots(1, 1, figsize=(15, 12))
-    plot_matches(ax, image1, image2, keypoint1, keypoint2, robust_matches)
-    plt.axis('off')
-    plt.show()
-
-    output_shape, offset = get_output_space(image1, [image2], [H])
-
-    image1_warped = warp_image(image1, np.eye(3), output_shape, offset)
-    image1_mask = (image1_warped != -1)
-    image1_warped[~image1_mask] = 0
-
-    image2_warped = warp_image(image2, H, output_shape, offset)
-    image2_mask = (image2_warped != -1)
-    image2_warped[~image2_mask] = 0
-
-    merged = image1_warped + image2_warped
-
-    overlap = np.maximum(image1_mask * 1 + image2_mask, 1)
-    merged = merged / overlap
-
-    plt.figure(figsize=(15, 12))
-    plt.imshow(merged, cmap="gray")
-    plt.show()
