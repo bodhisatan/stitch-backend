@@ -119,5 +119,124 @@ def get_algorithm_time_cost():
                     'algorithm_harrisList': algorithm_harrisList})
 
 
+@app.route('/get_total_time_cost', methods=['get'])
+def get_total_time_cost():
+    col = mongo.db[collection_name]
+    infos = col.find()
+    total_xAxisList = []
+    total_siftList = []
+    total_orbList = []
+    total_harrisList = []
+    for info in infos:
+        if info['algorithm'] == 'Harris':
+            total_harrisList.append(info["total_time_cost"])
+        elif info['algorithm'] == 'ORB':
+            total_orbList.append(info["total_time_cost"])
+        elif info['algorithm'] == 'SIFT':
+            total_siftList.append(info["total_time_cost"])
+    length = max(len(total_orbList), max(len(total_harrisList), len(total_siftList)))
+    for i in range(0, length):
+        total_xAxisList.append(str(i))
+    return jsonify({'total_xAxisList': total_xAxisList,
+                    'total_siftList': total_siftList,
+                    'total_orbList': total_orbList,
+                    'total_harrisList': total_harrisList})
+
+
+@app.route('/get_picture_names', methods=['get'])
+def get_pic_names():
+    col = mongo.db[collection_name]
+    infos = col.find()
+    name_set = set()
+    for info in infos:
+        name_set.add(info["pic_name"])
+    name_list = list(name_set)
+    return jsonify({'name_list': name_list})
+
+
+# 根据pic_name获取不同算法ssim、hist、psnr、耗时数据
+'''
+格式：
+datas = [
+        {
+          "category": 'SSIM',
+          "algorithmdata": [
+            {"algorithmname": 'Harris', "_data": '12.13'},
+            {"algorithmname": 'ORB', "_data": '10.3'},
+            {"algorithmname": 'SIFT', "_data": '15.5'}
+          ]
+        },
+        {
+          "category": '三通道相似度',
+          "algorithmdata": [
+            {"algorithmname": 'Harris', "_data": '12.13'},
+            {"algorithmname": 'ORB', "_data": '10.3'},
+            {"algorithmname": 'SIFT', "_data": '15.5'}
+          ]
+        },
+        ...
+      ]
+'''
+
+
+@app.route('/get_compare_data', methods=['post'])
+def get_compare_data():
+    ssim_algorithm_data = []
+    hist_algorithm_data = []
+    psnr_algorithm_data = []
+    feature_time_algorithm_data = []
+    tot_time_algorithm_data = []
+
+    data = request.get_json()
+    pic_name = data['pic_name']
+    col = mongo.db[collection_name]
+    infos = col.find()
+    for info in infos:
+        if info['pic_name'] == pic_name:
+            ssim_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": str(info['ssim'])
+            })
+            hist_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": str(info['hist'])
+            })
+            psnr_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": str(info['psnr'])
+            })
+            feature_time_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": info['algorithm_time_cost']
+            })
+            tot_time_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": info['total_time_cost']
+            })
+    datas = [
+        {
+            "category": 'SSIM',
+            "algorithmdata": ssim_algorithm_data
+        },
+        {
+            "category": '三通道相似度',
+            "algorithmdata": hist_algorithm_data
+        },
+        {
+            "category": 'PSNR',
+            "algorithmdata": psnr_algorithm_data
+        },
+        {
+            "category": '特征提取耗时',
+            "algorithmdata": feature_time_algorithm_data
+        },
+        {
+            "category": '总耗时',
+            "algorithmdata": tot_time_algorithm_data
+        },
+    ]
+    return jsonify({'compare_data': datas})
+
+
 if __name__ == '__main__':
     app.run()
