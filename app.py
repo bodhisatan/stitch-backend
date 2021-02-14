@@ -95,5 +95,29 @@ def start_analysis():
                     'total_time_cost': total_time_cost})
 
 
+@app.route('/get_algorithm_time_cost', methods=['get'])
+def get_algorithm_time_cost():
+    col = mongo.db[collection_name]
+    infos = col.find()
+    algorithm_xAxisList = []
+    algorithm_siftList = []
+    algorithm_orbList = []
+    algorithm_harrisList = []
+    for info in infos:
+        if info['algorithm'] == 'Harris':
+            algorithm_harrisList.append(info["algorithm_time_cost"])
+        elif info['algorithm'] == 'ORB':
+            algorithm_orbList.append(info["algorithm_time_cost"])
+        elif info['algorithm'] == 'SIFT':
+            algorithm_siftList.append(info["algorithm_time_cost"])
+    length = max(len(algorithm_orbList), max(len(algorithm_harrisList), len(algorithm_siftList)))
+    for i in range(0, length):
+        algorithm_xAxisList.append(str(i))
+    return jsonify({'algorithm_xAxisList': algorithm_xAxisList,
+                    'algorithm_siftList': algorithm_siftList,
+                    'algorithm_orbList': algorithm_orbList,
+                    'algorithm_harrisList': algorithm_harrisList})
+
+
 if __name__ == '__main__':
     app.run()
