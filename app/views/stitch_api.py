@@ -1,27 +1,23 @@
+# -*- coding: utf8 -*-
+# author: yaoxianjie
+# date: 2021/2/20
 import os
-from flask import Flask, request, jsonify
+from flask import request, jsonify, Blueprint
 import uuid
-from flask_cors import *
-import imageio
 import cv2
-from stitcher import Stitcher
-import pic_analysis
-import config
-from PIL import Image
-import matplotlib.pyplot as plt
-from flask_pymongo import PyMongo
 
-app = Flask(__name__)
-CORS(app, supports_credentials=True)  # 设置跨域
-app.config['MONGO_URI'] = config.database_url
-mongo = PyMongo(app)
-collection_name = "stitch-info"
+from app import mongo
+from utils.stitcher import Stitcher
+from utils import pic_analysis
+from config import Config
+
+api = Blueprint('api', __name__)
 
 
-@app.route('/upload_pic', methods=['post'])
+@api.route('/upload_pic', methods=['post'])
 def upload_pic():
     uuid_ = str(uuid.uuid1())
-    dir_name = config.nginx_file_url + uuid_
+    dir_name = Config.nginx_file_url + uuid_
     os.system("mkdir -vp {}".format(dir_name))
     files = request.files.getlist("file")
     file_names = []
@@ -34,13 +30,13 @@ def upload_pic():
                     'origin_file_name': origin_file_name})
 
 
-@app.route('/start', methods=['post'])
+@api.route('/start', methods=['post'])
 def start_analysis():
     data = request.get_json()
     origin_file_name = data["origin_file_name"]
     is_saved = data["isSaved"]
     algorithm = data['algorithm']
-    dir_name = config.nginx_file_url + data['pic_uuid'] + '/'
+    dir_name = Config.nginx_file_url + data['pic_uuid'] + '/'
     pic1_name = data['pic1_name']
     pic2_name = data['pic2_name']
     pic1_path = dir_name + pic1_name
@@ -82,12 +78,12 @@ def start_analysis():
             "hist": float(hist),
             "psnr": float(psnr)
         }
-        col = mongo.db[collection_name]
+        col = mongo.db.stitch_info
         col.insert_one(data_dict)
 
     # 使用nginx映射本地文件
-    return jsonify({'res_url': config.url + data['pic_uuid'] + '/result.png',
-                    'vis_url': config.url + data['pic_uuid'] + '/vis.png',
+    return jsonify({'res_url': Config.url + data['pic_uuid'] + '/result.png',
+                    'vis_url': Config.url + data['pic_uuid'] + '/vis.png',
                     'ssim': str(ssim),
                     'hist': str(hist),
                     'psnr': str(psnr),
@@ -95,9 +91,9 @@ def start_analysis():
                     'total_time_cost': total_time_cost})
 
 
-@app.route('/get_algorithm_time_cost', methods=['get'])
+@api.route('/get_algorithm_time_cost', methods=['get'])
 def get_algorithm_time_cost():
-    col = mongo.db[collection_name]
+    col = mongo.db.stitch_info
     infos = col.find()
     algorithm_xAxisList = []
     algorithm_siftList = []
@@ -119,9 +115,9 @@ def get_algorithm_time_cost():
                     'algorithm_harrisList': algorithm_harrisList})
 
 
-@app.route('/get_total_time_cost', methods=['get'])
+@api.route('/get_total_time_cost', methods=['get'])
 def get_total_time_cost():
-    col = mongo.db[collection_name]
+    col = mongo.db.stitch_info
     infos = col.find()
     total_xAxisList = []
     total_siftList = []
@@ -143,9 +139,9 @@ def get_total_time_cost():
                     'total_harrisList': total_harrisList})
 
 
-@app.route('/get_picture_names', methods=['get'])
+@api.route('/get_picture_names', methods=['get'])
 def get_pic_names():
-    col = mongo.db[collection_name]
+    col = mongo.db.stitch_info
     infos = col.find()
     name_set = set()
     for info in infos:
@@ -179,7 +175,7 @@ datas = [
 '''
 
 
-@app.route('/get_compare_data', methods=['post'])
+@api.route('/get_compare_data', methods=['post'])
 def get_compare_data():
     ssim_algorithm_data = []
     hist_algorithm_data = []
@@ -189,7 +185,7 @@ def get_compare_data():
 
     data = request.get_json()
     pic_name = data['pic_name']
-    col = mongo.db[collection_name]
+    col = mongo.db.stitch_info
     infos = col.find()
     for info in infos:
         if info['pic_name'] == pic_name:
@@ -236,7 +232,3 @@ def get_compare_data():
         },
     ]
     return jsonify({'compare_data': datas})
-
-
-if __name__ == '__main__':
-    app.run()

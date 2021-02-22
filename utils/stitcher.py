@@ -3,9 +3,7 @@
 # date: 2021/2/7
 import datetime
 
-import numpy as np
-import cv2
-from harris import *
+from utils.harris import *
 
 
 class Stitcher:
