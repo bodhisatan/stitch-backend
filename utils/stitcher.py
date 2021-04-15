@@ -4,6 +4,7 @@
 import datetime
 
 from utils.harris import *
+from utils.pic_analysis import cv_image_to_pil
 
 
 class Stitcher:
@@ -17,19 +18,12 @@ class Stitcher:
         (imageB, imageA) = images
         (imageB_tmp, imageA_tmp) = images
 
-        # 如果是Harris算法 转化成灰度图 并归一化
+        # 如果是Harris算法 转化成灰度图
         if feature_algorithm == 'Harris':
             imageB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
             imageA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
             imageA = np.float32(imageA)
             imageB = np.float32(imageB)
-            # 归一化
-            # dst1 = np.zeros(imageA.shape, dtype=np.float32)
-            # cv2.normalize(imageA, dst=dst1, alpha=1.0, beta=0, norm_type=cv2.NORM_INF)
-            # dst2 = np.zeros(imageB.shape, dtype=np.float32)
-            # cv2.normalize(imageB, dst=dst2, alpha=1.0, beta=0, norm_type=cv2.NORM_INF)
-            # imageA = dst1
-            # imageB = dst2
 
         time_step2 = datetime.datetime.now()
 
@@ -60,23 +54,10 @@ class Stitcher:
             # 将图片B传入result图片最左端
             result[0:imageB.shape[0], 0:imageB.shape[1]] = imageB
         elif feature_algorithm == 'Harris':
-            hog_matches = description_matches(featuresA, featuresB, threshold=0.7)
-            H, robust_matches = ransac(kpsA, kpsB, hog_matches, threshold=1)
-
-            output_shape, offset = get_output_space(imageA, [imageB], [H])
-
-            image1_warped = warp_image(imageA, np.eye(3), output_shape, offset)
-            image1_mask = (image1_warped != -1)
-            image1_warped[~image1_mask] = 0
-
-            image2_warped = warp_image(imageB, H, output_shape, offset)
-            image2_mask = (image2_warped != -1)
-            image2_warped[~image2_mask] = 0
-
-            merged = image1_warped + image2_warped
-
-            overlap = np.maximum(image1_mask * 1 + image2_mask, 1)
-            result = merged / overlap
+            maxOfImage1, maxOfImage2, maxOfDotProduct, originalMatrix, thresholdedMatrix, pairsList = matchDescriptors(
+                featuresA, featuresB)
+            rowOffset, columnOffset, bestMatches = RANSAC(pairsList, kpsA, kpsB)
+            result = appendImages(cv_image_to_pil(imageA_tmp), cv_image_to_pil(imageB_tmp), rowOffset, columnOffset)
 
         time_step4 = datetime.datetime.now()
 
@@ -91,7 +72,7 @@ class Stitcher:
             if feature_algorithm == 'SIFT' or feature_algorithm == 'ORB':
                 vis = self.drawMatches(imageA, imageB, kpsA, kpsB, matches, status)
             elif feature_algorithm == 'Harris':
-                vis = self.drawMatches_(imageA_tmp, imageB_tmp, kpsA, kpsB, robust_matches)
+                vis = plotMatches(imageA, imageB, kpsA, kpsB, pairsList)
             # 返回结果
             return result, vis, algorithm_time_cost, total_time_cost
 
@@ -100,8 +81,10 @@ class Stitcher:
 
     def detectAndDescribe(self, image, algorithm='SIFT'):
         if algorithm == 'Harris':
-            kps = corner_peaks(harris_corners(image), threshold_rel=0.05, exclude_border=8)
-            features = keypoint_description(image, kps, hog_description, patch_size=16)
+            image_tmp = generateHarrisMatrix(image, 2)
+            interestPoints = findHarrisPoints(image_tmp)
+            descriptors = findDescriptors(image, interestPoints)
+            return interestPoints, descriptors
         else:
             if algorithm == 'SIFT':
                 # 建立SIFT生成器
@@ -117,8 +100,8 @@ class Stitcher:
             # 将结果转换成NumPy数组
             kps = np.float32([kp.pt for kp in kps])
 
-        # 返回特征点集，及对应的描述特征
-        return kps, features
+            # 返回特征点集，及对应的描述特征
+            return kps, features
 
     def matchKeypoints(self, kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh):
         # 建立暴力匹配器
@@ -168,19 +151,3 @@ class Stitcher:
         # 返回可视化结果
         return vis
 
-    def drawMatches_(self, imageA, imageB, kpsA, kpsB, matches):
-        # 初始化可视化图片，将A、B图左右连接到一起
-        (hA, wA) = imageA.shape[:2]
-        (hB, wB) = imageB.shape[:2]
-        vis = np.zeros((max(hA, hB), wA + wB, 3), dtype="uint8")
-        vis[0:hA, 0:wA] = imageA
-        vis[0:hB, wA:] = imageB
-        for one_match in matches:
-            index1 = one_match[0]
-            index2 = one_match[1]
-            ptA = kpsA[index1, 1], kpsB[index2, 1]
-            ptB = kpsB[index2, 0] + imageA.shape[1], kpsA[index1, 0]
-            cv2.line(vis, ptA, ptB, (0, 255, 0), 1)
-
-        # 返回可视化结果
-        return vis

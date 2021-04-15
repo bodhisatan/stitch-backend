@@ -137,7 +137,7 @@ def drawMatches(imageA, imageB, kpsA, kpsB, matches):
         index1 = one_match[0]
         index2 = one_match[1]
         ptA = kpsA[index1, 1], kpsB[index2, 1]
-        ptB = kpsB[index2, 0] + image1.shape[1], kpsA[index1, 0]
+        ptB = kpsB[index2, 0] + imageA.shape[1], kpsA[index1, 0]
         cv2.line(vis, ptA, ptB, (0, 255, 0), 1)
 
     # 返回可视化结果
