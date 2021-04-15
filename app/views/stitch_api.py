@@ -10,6 +10,7 @@ from app import mongo
 from utils.stitcher import Stitcher
 from utils import pic_analysis
 from config import Config
+import platform
 
 api = Blueprint('api', __name__)
 
@@ -18,7 +19,12 @@ api = Blueprint('api', __name__)
 def upload_pic():
     uuid_ = str(uuid.uuid1())
     dir_name = Config.nginx_file_url + uuid_
-    os.system("mkdir -vp {}".format(dir_name))
+    # 根据系统新建文件夹
+    sysstr = platform.system()
+    if sysstr == "Windows":
+        os.system("mkdir \"{}\"".format(dir_name))
+    else:
+        os.system("mkdir -vp {}".format(dir_name))
     files = request.files.getlist("file")
     file_names = []
     origin_file_name = files[0].filename
@@ -82,8 +88,8 @@ def start_analysis():
         col.insert_one(data_dict)
 
     # 使用nginx映射本地文件
-    return jsonify({'res_url': Config.url + data['pic_uuid'] + '/result.png',
-                    'vis_url': Config.url + data['pic_uuid'] + '/vis.png',
+    return jsonify({'res_url': Config.nginx_url + data['pic_uuid'] + '/result.png',
+                    'vis_url': Config.nginx_url + data['pic_uuid'] + '/vis.png',
                     'ssim': str(ssim),
                     'hist': str(hist),
                     'psnr': str(psnr),
