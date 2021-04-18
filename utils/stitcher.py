@@ -20,6 +20,8 @@ class Stitcher:
 
         # 如果是Harris算法 转化成灰度图
         if feature_algorithm == 'Harris':
+            imageA, imageB = imageB, imageA
+            imageA_tmp, imageB_tmp = imageB_tmp, imageA_tmp
             imageB = cv2.cvtColor(imageB, cv2.COLOR_BGR2GRAY)
             imageA = cv2.cvtColor(imageA, cv2.COLOR_BGR2GRAY)
             imageA = np.float32(imageA)
