@@ -316,8 +316,7 @@ class loftrInfer(object):
         for i in range(p1s.shape[0]):
             p1 = tuple(p1s[i])
             p2 = (p2s[i][0] + w + mid_space, p2s[i][1])
-            cv2.line(show, p1, p2, (np.random.randint(0, 255), np.random.randint(0, 255), np.random.randint(0, 255)),
-                     1)  # 画线
+            cv2.line(show, p1, p2, (0, 255, 0), 1)  # 画线
 
         return show
 
@@ -352,7 +351,9 @@ class loftrInfer(object):
         time_step3 = datetime.datetime.now()
         mkpts0, mkpts1 = self._points_filter(np_result, lenth=lenth, use_kmeans=use_kmeans)  # 特征点筛选
         if if_draw:  # 显示匹配点对
-            vis = self._draw_matchs(img0_bgr, img1_bgr, mkpts0, mkpts1, mid_space=10, if_save=if_save)
+            # vis = self._draw_matchs(img0_bgr, img1_bgr, mkpts0, mkpts1, mid_space=10, if_save=if_save)
+            vis = self._draw_matchs(img0_bgr, img1_bgr, np_result[:lenth, :2].copy(), np_result[:lenth, 2:4].copy(),
+                                    mid_space=10, if_save=if_save)
         if stitch_method == 0:
             '''拼接,github方法，你推荐的l2net中的方法'''
             stitcher = Stitcher(img0_bgr, img1_bgr)
