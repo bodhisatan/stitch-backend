@@ -38,7 +38,7 @@ class Stitcher:
         time_step3 = datetime.datetime.now()
 
         # ##############################特征匹配 + 图像融合#######################################
-
+        feature_num = 0
         # 匹配两张图片的所有特征点，返回匹配结果
         if feature_algorithm == 'SIFT' or feature_algorithm == 'ORB':
             M = self.matchKeypoints(kpsA, kpsB, featuresA, featuresB, ratio, reprojThresh)
@@ -50,6 +50,7 @@ class Stitcher:
             # 否则，提取匹配结果
             # H是3x3视角变换矩阵
             (matches, H, status) = M
+            feature_num = len(matches)
             # 将图片A进行视角变换，result是变换后图片
             result = cv2.warpPerspective(imageA, H, (imageA.shape[1] + imageB.shape[1], imageA.shape[0]))
 
@@ -59,6 +60,7 @@ class Stitcher:
             maxOfImage1, maxOfImage2, maxOfDotProduct, originalMatrix, thresholdedMatrix, pairsList = matchDescriptors(
                 featuresA, featuresB)
             rowOffset, columnOffset, bestMatches = RANSAC(pairsList, kpsA, kpsB)
+            feature_num = len(pairsList)
             result = appendImages(cv_image_to_pil(imageA_tmp), cv_image_to_pil(imageB_tmp), rowOffset, columnOffset)
 
         time_step4 = datetime.datetime.now()
@@ -76,10 +78,10 @@ class Stitcher:
             elif feature_algorithm == 'Harris':
                 vis = plotMatches(imageA, imageB, kpsA, kpsB, pairsList)
             # 返回结果
-            return result, vis, algorithm_time_cost, total_time_cost
+            return result, vis, algorithm_time_cost, total_time_cost, feature_num
 
         # 返回匹配结果
-        return result, algorithm_time_cost, total_time_cost
+        return result, algorithm_time_cost, total_time_cost, feature_num
 
     def detectAndDescribe(self, image, algorithm='SIFT'):
         if algorithm == 'Harris':

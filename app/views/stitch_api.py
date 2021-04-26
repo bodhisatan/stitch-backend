@@ -7,6 +7,7 @@ import uuid
 import cv2
 
 from app import mongo
+from loftr_utils.inference import loftrInfer
 from utils.stitcher import Stitcher
 from utils import pic_analysis
 from config import Config
@@ -56,10 +57,19 @@ def start_analysis():
     image1 = cv2.resize(image1, (max(wA, wB), max(hA, hB)))
     image2 = cv2.resize(image2, (max(wA, wB), max(hA, hB)))
 
-    # 拼接图像
-    stitcher = Stitcher()
-    (result, vis, algorithm_time_cost, total_time_cost) = stitcher.stitch([image1, image2],
-                                                                          showMatches=True, feature_algorithm=algorithm)
+    if algorithm == "DeepLearning":
+        testInfer = loftrInfer(
+            model_path="C:\\Users\\18132\\Desktop\\大毕设\\bishe\\stitch-backend\\loftr_utils\\weights\\indoor_ds.ckpt")
+        img0_bgr = cv2.imread(pic1_path)  # 读取图片，bgr格式
+        img1_bgr = cv2.imread(pic2_path)
+
+        (result, vis, algorithm_time_cost, total_time_cost, feature_num) = testInfer.run(img0_bgr, img1_bgr, lenth=200, use_kmeans=True, if_draw=True, if_save=False,
+                               stitch_method=0)
+    else:
+        # 拼接图像
+        stitcher = Stitcher()
+        (result, vis, algorithm_time_cost, total_time_cost, feature_num) = stitcher.stitch([image1, image2],
+                                                                              showMatches=True, feature_algorithm=algorithm)
     cv2.imwrite(dir_name + "result.png", result)
     cv2.imwrite(dir_name + "vis.png", vis)
 
@@ -82,7 +92,8 @@ def start_analysis():
             "total_time_cost": total_time_cost,
             "ssim": float(ssim),
             "hist": float(hist),
-            "psnr": float(psnr)
+            "psnr": float(psnr),
+            "feature_num": feature_num
         }
         col = mongo.db.stitch_info
         col.insert_one(data_dict)
@@ -94,7 +105,8 @@ def start_analysis():
                     'hist': str(hist),
                     'psnr': str(psnr),
                     'algorithm_time_cost': algorithm_time_cost,
-                    'total_time_cost': total_time_cost})
+                    'total_time_cost': total_time_cost,
+                    'feature_num': feature_num})
 
 
 @api.route('/get_algorithm_time_cost', methods=['get'])
@@ -105,6 +117,7 @@ def get_algorithm_time_cost():
     algorithm_siftList = []
     algorithm_orbList = []
     algorithm_harrisList = []
+    algorithm_loftrList = []
     for info in infos:
         if info['algorithm'] == 'Harris':
             algorithm_harrisList.append(info["algorithm_time_cost"])
@@ -112,13 +125,16 @@ def get_algorithm_time_cost():
             algorithm_orbList.append(info["algorithm_time_cost"])
         elif info['algorithm'] == 'SIFT':
             algorithm_siftList.append(info["algorithm_time_cost"])
-    length = max(len(algorithm_orbList), max(len(algorithm_harrisList), len(algorithm_siftList)))
+        elif info['algorithm'] == 'DeepLearning':
+            algorithm_loftrList.append(info["algorithm_time_cost"])
+    length = max(len(algorithm_orbList), max(len(algorithm_harrisList), len(algorithm_siftList), len(algorithm_loftrList)))
     for i in range(0, length):
         algorithm_xAxisList.append(str(i))
     return jsonify({'algorithm_xAxisList': algorithm_xAxisList,
                     'algorithm_siftList': algorithm_siftList,
                     'algorithm_orbList': algorithm_orbList,
-                    'algorithm_harrisList': algorithm_harrisList})
+                    'algorithm_harrisList': algorithm_harrisList,
+                    'algorithm_loftrList': algorithm_loftrList})
 
 
 @api.route('/get_total_time_cost', methods=['get'])
@@ -129,6 +145,7 @@ def get_total_time_cost():
     total_siftList = []
     total_orbList = []
     total_harrisList = []
+    total_loftrList = []
     for info in infos:
         if info['algorithm'] == 'Harris':
             total_harrisList.append(info["total_time_cost"])
@@ -136,13 +153,16 @@ def get_total_time_cost():
             total_orbList.append(info["total_time_cost"])
         elif info['algorithm'] == 'SIFT':
             total_siftList.append(info["total_time_cost"])
-    length = max(len(total_orbList), max(len(total_harrisList), len(total_siftList)))
+        elif info['algorithm'] == 'DeepLearning':
+            total_loftrList.append(info["total_time_cost"])
+    length = max(len(total_orbList), max(len(total_harrisList), len(total_siftList), len(total_loftrList)))
     for i in range(0, length):
         total_xAxisList.append(str(i))
     return jsonify({'total_xAxisList': total_xAxisList,
                     'total_siftList': total_siftList,
                     'total_orbList': total_orbList,
-                    'total_harrisList': total_harrisList})
+                    'total_harrisList': total_harrisList,
+                    'total_loftrList': total_loftrList})
 
 
 @api.route('/get_picture_names', methods=['get'])
@@ -186,6 +206,7 @@ def get_compare_data():
     ssim_algorithm_data = []
     hist_algorithm_data = []
     psnr_algorithm_data = []
+    feature_num_algorithm_data = []
     feature_time_algorithm_data = []
     tot_time_algorithm_data = []
 
@@ -215,6 +236,10 @@ def get_compare_data():
                 "algorithmname": info['algorithm'],
                 "_data": info['total_time_cost']
             })
+            feature_num_algorithm_data.append({
+                "algorithmname": info['algorithm'],
+                "_data": info['feature_num']
+            })
     datas = [
         {
             "category": 'SSIM',
@@ -227,6 +252,10 @@ def get_compare_data():
         {
             "category": 'PSNR',
             "algorithmdata": psnr_algorithm_data
+        },
+        {
+            "category": '特征点对个数',
+            "algorithmdata": feature_num_algorithm_data
         },
         {
             "category": '特征提取耗时',
