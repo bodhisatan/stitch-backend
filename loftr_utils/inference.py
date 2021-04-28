@@ -62,7 +62,7 @@ class Stitcher:
 
         self.image = None
 
-    def stich(self, p1s, p2s, show_result=True, show_match_point=False, use_new_match_method=False, use_partial=False,
+    def stitch(self, p1s, p2s, show_result=True, show_match_point=False, use_new_match_method=False, use_partial=False,
               use_gauss_blend=True):
         """对图片进行拼合
 
@@ -357,7 +357,7 @@ class loftrInfer(object):
         if stitch_method == 0:
             '''拼接,github方法，你推荐的l2net中的方法'''
             stitcher = Stitcher(img0_bgr, img1_bgr)
-            stitcher.stich(p1s=mkpts0, p2s=mkpts1, use_partial=False, use_new_match_method=0, use_gauss_blend=0)
+            stitcher.stitch(p1s=mkpts0, p2s=mkpts1, use_partial=False, use_new_match_method=0, use_gauss_blend=0)
             image = (stitcher.image).copy()
         else:
             # 简单方法，变换右图进行拼接
