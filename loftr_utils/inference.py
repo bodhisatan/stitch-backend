@@ -43,7 +43,7 @@ def drawMatches(img_left, img_right, kps_left, kps_right):
     return image[:, :max_w]
 
 
-# 你发的github上的代码，可以用他的拼接，但感觉效果也差不多
+# 拼接器
 class Stitcher:
     def __init__(self, image1: np.ndarray, image2: np.ndarray):
         """输入图像和匹配，对图像进行拼接
@@ -102,7 +102,7 @@ class Stitcher:
              [0, 1, max(-top, 0)],  # 纵向
              [0, 0, 1]
              ], dtype=np.float64)
-        # print('adjustM: ', adjustM)
+        print('adjustM: ', self.adjustM)
         self.M = np.dot(self.adjustM, self.M)
         transformed_1 = cv2.warpPerspective(
             self.image1, self.M, (width, height))
@@ -355,9 +355,9 @@ class loftrInfer(object):
             vis = self._draw_matchs(img0_bgr, img1_bgr, np_result[:lenth, :2].copy(), np_result[:lenth, 2:4].copy(),
                                     mid_space=10, if_save=if_save)
         if stitch_method == 0:
-            '''拼接,github方法，你推荐的l2net中的方法'''
+            '''拼接，复杂方法'''
             stitcher = Stitcher(img0_bgr, img1_bgr)
-            stitcher.stitch(p1s=mkpts0, p2s=mkpts1, use_partial=False, use_new_match_method=0, use_gauss_blend=0)
+            stitcher.stitch(p1s=mkpts0, p2s=mkpts1, use_partial=False, use_new_match_method=0, use_gauss_blend=1)
             image = (stitcher.image).copy()
         else:
             # 简单方法，变换右图进行拼接
