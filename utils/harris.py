@@ -157,6 +157,7 @@ def RANSAC(matches, coordinates1, coordinates2, matchDistance=1.6):
         ## Only continue into j loop looking for consensus if this point hasn't
         ## been found and folded into a consensus set earlier.  Just improves
         ## efficiency.
+        # 在RANSAC迭代的同时 计算总行偏移和总列偏移 最后求平均
         if (offi0 - best_row_offset) ** 2 + (offi1 - best_col_offset) ** 2 >= d2:
             sum_row_offsets, sum_col_offsets = offi0, offi1
             for j in range(len(matches)):

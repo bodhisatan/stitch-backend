@@ -35,7 +35,7 @@ class Stitcher:
         kpsA, featuresA = self.detectAndDescribe(imageA, algorithm=feature_algorithm)
         kpsB, featuresB = self.detectAndDescribe(imageB, algorithm=feature_algorithm)
 
-        time_step3 = datetime.datetime.now()
+        # time_step3 = datetime.datetime.now()
 
         # ##############################特征匹配 + 图像融合#######################################
         feature_num = 0
@@ -46,6 +46,8 @@ class Stitcher:
             # 如果返回结果为空，没有匹配成功的特征点，退出算法
             if M is None:
                 return None
+
+            time_step3 = datetime.datetime.now()
 
             # 否则，提取匹配结果
             # H是3x3视角变换矩阵
@@ -59,6 +61,9 @@ class Stitcher:
         elif feature_algorithm == 'Harris':
             maxOfImage1, maxOfImage2, maxOfDotProduct, originalMatrix, thresholdedMatrix, pairsList = matchDescriptors(
                 featuresA, featuresB)
+
+            time_step3 = datetime.datetime.now()
+
             rowOffset, columnOffset, bestMatches = RANSAC(pairsList, kpsA, kpsB)
             feature_num = len(pairsList)
             result = appendImages(cv_image_to_pil(imageA_tmp), cv_image_to_pil(imageB_tmp), rowOffset, columnOffset)
