@@ -105,6 +105,13 @@ def matchDescriptors(descriptors1, descriptors2, threshold=0.95):
     # Image before thresholding, Image after thresholding and Pairs list
     return max1, max2, maxDotProduct, originalMatrix, thresholdedMatrix, pairs
 
+def plotFeatures(image1, interestPoints1):
+    show = image1.copy()
+    for i in range(len(interestPoints1)):
+        p1 = (interestPoints1[i][1], interestPoints1[i][0])
+        cv2.circle(show, p1, 3, (0, 0, 255), 2)
+
+    return show
 
 def plotMatches(image1, image2, interestPoints1, interestPoints2, pairs):
     rows1 = image1.shape[0]

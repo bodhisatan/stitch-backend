@@ -295,6 +295,21 @@ class loftrInfer(object):
             return use_mkpts0, use_mkpts1
         return mkpts0, mkpts1
 
+    def _draw_features(self, img1, pts1):
+        '''
+        圈出特征点
+        :param img1:
+        :param pts1:
+        :return:
+        '''
+        show = img1.copy()
+
+        for i in range(pts1.shape[0]):
+            p1 = tuple(pts1[i])
+            cv2.circle(show, p1, 3, (0, 0, 255), 2)
+
+        return show
+
     def _draw_matchs(self, img1, img2, p1s, p2s, mid_space=10, if_save=False):
         '''
             画匹配点并显示，分别输入图像、特征点  ; mid_space间隔
@@ -351,9 +366,10 @@ class loftrInfer(object):
         time_step3 = datetime.datetime.now()
         mkpts0, mkpts1 = self._points_filter(np_result, lenth=lenth, use_kmeans=use_kmeans)  # 特征点筛选
         if if_draw:  # 显示匹配点对
-            # vis = self._draw_matchs(img0_bgr, img1_bgr, mkpts0, mkpts1, mid_space=10, if_save=if_save)
+            # vis = self._draw_matchs(img0_bgr, img1_bgr, mkpts0, mkpts1, mid_space=10, if_save=if_save)  # 筛选之后的匹配图
             vis = self._draw_matchs(img0_bgr, img1_bgr, np_result[:lenth, :2].copy(), np_result[:lenth, 2:4].copy(),
-                                    mid_space=10, if_save=if_save)
+                                    mid_space=10, if_save=if_save)  # 筛选之前的匹配图
+            # vis = self._draw_features(img0_bgr, np_result[:lenth, :2].copy())  # 绘制特征点（用于K-Means仿真图）
         if stitch_method == 0:
             '''拼接，复杂方法'''
             stitcher = Stitcher(img0_bgr, img1_bgr)

@@ -79,8 +79,10 @@ class Stitcher:
         if showMatches:
             # 生成匹配图片
             if feature_algorithm == 'SIFT' or feature_algorithm == 'ORB':
+                # vis = self.drawFeatures(imageA, kpsA)  # 画特征点
                 vis = self.drawMatches(imageA, imageB, kpsA, kpsB, matches, status)
             elif feature_algorithm == 'Harris':
+                # vis = plotFeatures(imageA, kpsA)  # 画特征点
                 vis = plotMatches(imageA, imageB, kpsA, kpsB, pairsList)
             # 返回结果
             return result, vis, algorithm_time_cost, total_time_cost, feature_num
@@ -140,6 +142,15 @@ class Stitcher:
 
         # 如果匹配对小于4时，返回None
         return None
+
+    def drawFeatures(self, imageA, kpsA):
+        show = imageA.copy()
+
+        for i in range(kpsA.shape[0]):
+            p1 = tuple(kpsA[i])
+            cv2.circle(show, p1, 3, (0, 0, 255), 2)
+
+        return show
 
     def drawMatches(self, imageA, imageB, kpsA, kpsB, matches, status):
         # 初始化可视化图片，将A、B图左右连接到一起
